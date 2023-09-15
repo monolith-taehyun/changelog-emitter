@@ -128,7 +128,8 @@ export class Changelog {
             page: this.commitPage,
         });
         core.info(
-            "rawCommits\n----------------\n" + JSON.stringify(rawCommits)
+            "\nrawCommits\n----------------\n" +
+                JSON.stringify(rawCommits, null, 2)
         );
         const commits: Array<string> = rawCommits.data.map(
             (commit: any) => commit.sha
@@ -150,8 +151,8 @@ export class Changelog {
             page: this.pullRequestPage,
         });
         core.info(
-            "rawPullRequests\n----------------\n" +
-                JSON.stringify(rawPullRequests)
+            "\nrawPullRequests\n----------------\n" +
+                JSON.stringify(rawPullRequests, null, 2)
         );
         const mergedPullRequests: any = rawPullRequests.data.filter(
             (pullRequest: any) => pullRequest.merged_at
@@ -169,8 +170,8 @@ export class Changelog {
 
         this.pullRequests = this.pullRequests.concat(pullRequests);
         core.info(
-            "this.pullRequests\n----------------\n" +
-                JSON.stringify(this.pullRequests)
+            "\nthis.pullRequests\n----------------\n" +
+                JSON.stringify(this.pullRequests, null, 2)
         );
         this.pullRequestPage++;
     }
@@ -192,21 +193,29 @@ export class Changelog {
             }
         }
 
-        core.info("Before PR contents");
+        core.info("\nindexOfTag: " + indexOfTag);
+
+        core.info("\nBefore PR contents");
 
         for (let i = 0; ; i++) {
+            core.info(
+                "\nthis.pullRequests[i]: " +
+                    JSON.stringify(this.pullRequests[i], null, 2)
+            );
             const indexOfPullRequest = this.commits.indexOf(
                 this.pullRequests[i].commitSha
             );
+            core.info("\nindexOfPullRequest: " + indexOfPullRequest);
             if (indexOfPullRequest === -1 || indexOfPullRequest >= indexOfTag) {
                 break;
             } else if (i === this.pullRequests.length - 1) {
                 await this.getPullRequests();
             } else {
+                core.info("== ELSE ==");
                 changelogBody += `${this.prefix} ${this.pullRequests[i].title}\n`;
             }
         }
-        core.info("changeLogBody=" + changelogBody);
+        core.info("\nchangeLogBody=" + changelogBody);
         core.info("===============================");
         this.changelogBody = changelogBody;
     }
