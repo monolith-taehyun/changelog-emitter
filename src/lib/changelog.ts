@@ -1,7 +1,8 @@
-import { Octokit } from '@octokit/rest';
-import { Config, PullRequest } from './types';
+import { Octokit } from "@octokit/rest";
+import * as core from "@actions/core";
+import { Config, PullRequest } from "./types";
 
-const PULL_REQUEST_STATE = 'closed';
+const PULL_REQUEST_STATE = "closed";
 const RESULTS_PER_PAGE = 100;
 
 export class Changelog {
@@ -21,16 +22,16 @@ export class Changelog {
         this.commits = [];
         this.commitPage = 0;
         this.config = config;
-        this.latestTagsCommit = '';
+        this.latestTagsCommit = "";
         this.octokit = new Octokit({
             auth: config.githubToken,
         });
         this.pullRequests = [];
         this.pullRequestPage = 0;
-        this.branch = '';
+        this.branch = "";
         this.title = config.title;
         this.prefix = config.prefix;
-        this.changelogBody = '';
+        this.changelogBody = "";
     }
 
     /**
@@ -82,21 +83,27 @@ export class Changelog {
             repo: this.config.repo,
         });
         const tagName = release.data.tag_name;
+        core.info("tagName=" + tagName);
         // We do not assume we would not find latest release tag, otherwise something
         // is really wrong with github
-        for (let page = 0;; page++) {
-            const releasesTag = (await this.getTags(page)).filter((tag) => tag.name === tagName);
+        for (let page = 0; ; page++) {
+            const releasesTag = (await this.getTags(page)).filter(
+                (tag) => tag.name === tagName
+            );
             if (releasesTag.length === 1) {
                 this.latestTagsCommit = releasesTag[0].commitSha;
                 break;
             }
         }
+        core.info("this.latestTagsCommit=" + this.latestTagsCommit);
     }
 
     /**
      * Get tags
      */
-    private async getTags(page: number): Promise<Array<{name: string, commitSha: string}>> {
+    private async getTags(
+        page: number
+    ): Promise<Array<{ name: string; commitSha: string }>> {
         const tags = await this.octokit.rest.repos.listTags({
             owner: this.config.owner,
             repo: this.config.repo,
@@ -120,7 +127,9 @@ export class Changelog {
             per_page: RESULTS_PER_PAGE,
             page: this.commitPage,
         });
-        const commits: Array<string> = rawCommits.data.map((commit: any) => commit.sha);
+        const commits: Array<string> = rawCommits.data.map(
+            (commit: any) => commit.sha
+        );
         this.commits = this.commits.concat(commits);
         this.commitPage++;
     }
@@ -138,7 +147,7 @@ export class Changelog {
             page: this.pullRequestPage,
         });
         const mergedPullRequests: any = rawPullRequests.data.filter(
-            (pullRequest: any) => pullRequest.merged_at,
+            (pullRequest: any) => pullRequest.merged_at
         );
 
         const pullRequests: Array<PullRequest> = mergedPullRequests.map(
@@ -159,11 +168,11 @@ export class Changelog {
      * Creates changelog body from pull request titles
      */
     private async generateChangelog(): Promise<void> {
-        let changelogBody = '';
+        let changelogBody = "";
         let indexOfTag: number;
 
         // If index not found fetch more commits
-        for(;;) {
+        for (;;) {
             indexOfTag = this.commits.indexOf(this.latestTagsCommit);
             if (indexOfTag === -1) {
                 await this.getCommits();
@@ -172,16 +181,21 @@ export class Changelog {
             }
         }
 
-        for(let i = 0;; i++) {
-            const indexOfPullRequest = this.commits.indexOf(this.pullRequests[i].commitSha);
+        core.info("Before PR contents");
+
+        for (let i = 0; ; i++) {
+            const indexOfPullRequest = this.commits.indexOf(
+                this.pullRequests[i].commitSha
+            );
             if (indexOfPullRequest === -1 || indexOfPullRequest >= indexOfTag) {
                 break;
-            } else if (i === this.pullRequests.length -1) {
+            } else if (i === this.pullRequests.length - 1) {
                 await this.getPullRequests();
             } else {
                 changelogBody += `${this.prefix} ${this.pullRequests[i].title}\n`;
             }
         }
+        core.info("changeLogBody=" + changelogBody);
         this.changelogBody = changelogBody;
     }
 }
