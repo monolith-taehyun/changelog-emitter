@@ -127,7 +127,9 @@ export class Changelog {
             per_page: RESULTS_PER_PAGE,
             page: this.commitPage,
         });
-        core.info("rawCommits\n----------------\n" + rawCommits);
+        core.info(
+            "rawCommits\n----------------\n" + JSON.stringify(rawCommits)
+        );
         const commits: Array<string> = rawCommits.data.map(
             (commit: any) => commit.sha
         );
@@ -147,7 +149,10 @@ export class Changelog {
             per_page: RESULTS_PER_PAGE,
             page: this.pullRequestPage,
         });
-        core.info("rawPullRequests\n----------------\n" + rawPullRequests);
+        core.info(
+            "rawPullRequests\n----------------\n" +
+                JSON.stringify(rawPullRequests)
+        );
         const mergedPullRequests: any = rawPullRequests.data.filter(
             (pullRequest: any) => pullRequest.merged_at
         );
@@ -163,7 +168,10 @@ export class Changelog {
         );
 
         this.pullRequests = this.pullRequests.concat(pullRequests);
-        core.info("this.pullRequests\n----------------\n" + this.pullRequests);
+        core.info(
+            "this.pullRequests\n----------------\n" +
+                JSON.stringify(this.pullRequests)
+        );
         this.pullRequestPage++;
     }
 
