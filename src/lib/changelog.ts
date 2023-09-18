@@ -10,6 +10,7 @@ export class Changelog {
     private commitPage: number;
     private config: Config;
     private latestTagsCommit: string;
+    private previousTagsCommit: string;
     private octokit: Octokit;
     private pullRequests: Array<PullRequest>;
     private pullRequestPage: number;
@@ -95,7 +96,38 @@ export class Changelog {
                 break;
             }
         }
-        core.info("this.latestTagsCommit=" + this.latestTagsCommit);
+        core.info("\nthis.latestTagsCommit=" + this.latestTagsCommit);
+    }
+
+    /**
+     * Get previous release and it's commit.
+     * TODO: fails if there is no release
+     */
+    private async getPreviousRelease(): Promise<void> {
+        const releases = await this.octokit.rest.repos.listReleases({
+            owner: this.config.owner,
+            repo: this.config.repo,
+        });
+        core.info("releases: " + JSON.stringify(releases, null, 2));
+
+        for (let i = 0; ; i++) {
+            const release = releases[i];
+            const tagName = release.data.tag_name;
+            let releaseSha = "";
+            for (let page = 0; ; page++) {
+                const releasesTag = (await this.getTags(page)).filter(
+                    (tag) => tag.name === tagName
+                );
+                if (releasesTag.length === 1) {
+                    releaseSha = releasesTag[0].commitSha;
+                    break;
+                }
+            }
+            if (releaseSha !== this.latestTagsCommit) {
+                this.previousTagsCommit = releaseSha;
+                break;
+            }
+        }
     }
 
     /**
@@ -127,13 +159,14 @@ export class Changelog {
             per_page: RESULTS_PER_PAGE,
             page: this.commitPage,
         });
-        core.info(
-            "\nrawCommits\n----------------\n" +
-                JSON.stringify(rawCommits, null, 2)
-        );
         const commits: Array<string> = rawCommits.data.map(
             (commit: any) => commit.sha
         );
+
+        core.info(
+            "\ncommits\n----------------\n" + JSON.stringify(commits, null, 2)
+        );
+
         this.commits = this.commits.concat(commits);
         this.commitPage++;
     }
@@ -181,20 +214,22 @@ export class Changelog {
      */
     private async generateChangelog(): Promise<void> {
         let changelogBody = "";
-        let indexOfTag: number;
+        let indexOfLatestTag: number;
+        let indexOfPreviousTag: number;
 
         // If index not found fetch more commits
         for (;;) {
-            indexOfTag = this.commits.indexOf(this.latestTagsCommit);
-            if (indexOfTag === -1) {
+            indexOfLatestTag = this.commits.indexOf(this.latestTagsCommit);
+            indexOfPreviousTag = this.commits.indexOf(this.previousTagsCommit);
+            if (indexOfPreviousTag === -1) {
                 await this.getCommits();
             } else {
                 break;
             }
         }
 
-        core.info("\nindexOfTag: " + indexOfTag);
-
+        core.info("\nindexOfLatestTag: " + indexOfLatestTag);
+        core.info("\nindexOfPreviousTag: " + indexOfPreviousTag);
         core.info("\nBefore PR contents");
 
         for (let i = 0; ; i++) {
@@ -206,7 +241,12 @@ export class Changelog {
                 this.pullRequests[i].commitSha
             );
             core.info("\nindexOfPullRequest: " + indexOfPullRequest);
-            if (indexOfPullRequest === -1 || indexOfPullRequest >= indexOfTag) {
+
+            if (
+                indexOfPullRequest === -1 ||
+                indexOfPullRequest > indexOfLatestTag ||
+                indexOfPullRequest <= indexOfPreviousTag
+            ) {
                 break;
             } else if (i === this.pullRequests.length - 1) {
                 await this.getPullRequests();
