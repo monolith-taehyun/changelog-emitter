@@ -24,6 +24,7 @@ export class Changelog {
         this.commitPage = 0;
         this.config = config;
         this.latestTagsCommit = "";
+        this.previousTagsCommit = "";
         this.octokit = new Octokit({
             auth: config.githubToken,
         });
