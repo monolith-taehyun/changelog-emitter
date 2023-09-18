@@ -259,7 +259,7 @@ export class Changelog {
         }
 
         // 기존 changelog 내용 조회
-        const existsChangelogBody = await this.getCommitFileContent();
+        const existsChangelogBody = await this.getChangelogFileContent();
         changelogBody += existsChangelogBody;
 
         core.info("\nchangeLogBody=" + changelogBody);
@@ -267,7 +267,8 @@ export class Changelog {
         this.changelogBody = changelogBody;
     }
 
-    private async getCommitFileContent() {
+    private async getChangelogFileContent() {
+        let contents = "";
         try {
             const response = await this.octokit.repos.getContent({
                 owner: this.config.owner,
@@ -276,21 +277,22 @@ export class Changelog {
                 ref: this.previousTagsCommit, // 커밋의 SHA
             });
 
-            core.info("\nresponse=" + response);
+            core.info("\nresponse=" + JSON.stringify(response, null, 2));
 
             if (Array.isArray(response.data)) {
                 console.error("The specified path is a directory.");
             } else if ("content" in response.data) {
-                const content = Buffer.from(
+                contents = Buffer.from(
                     response.data.content,
                     "base64"
                 ).toString();
-                console.log("File Content:", content);
+                console.log("File Content:", contents);
             } else {
                 console.error("File content not found in the response.");
             }
         } catch (error) {
             console.error("Error:", (error as { message: string }).message);
         }
+        return contents;
     }
 }
