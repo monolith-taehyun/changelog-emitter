@@ -280,12 +280,14 @@ export class Changelog {
 
             if (Array.isArray(response.data)) {
                 console.error("The specified path is a directory.");
-            } else {
+            } else if ("content" in response.data) {
                 const content = Buffer.from(
-                    response.data["content"],
+                    response.data.content,
                     "base64"
                 ).toString();
                 console.log("File Content:", content);
+            } else {
+                console.error("File content not found in the response.");
             }
         } catch (error) {
             console.error("Error:", error.message);
