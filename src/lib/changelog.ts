@@ -57,6 +57,7 @@ export class Changelog {
     public async run(): Promise<void> {
         await this.setBranch();
         await this.getLatestRelease();
+        await this.getPreviousRelease();
         await this.getCommits();
         await this.getPullRequests();
         await this.generateChangelog();
@@ -129,6 +130,7 @@ export class Changelog {
                 break;
             }
         }
+        core.info("\nthis.previousTagsCommit=" + this.previousTagsCommit);
     }
 
     /**
@@ -184,10 +186,6 @@ export class Changelog {
             per_page: RESULTS_PER_PAGE,
             page: this.pullRequestPage,
         });
-        core.info(
-            "\nrawPullRequests\n----------------\n" +
-                JSON.stringify(rawPullRequests, null, 2)
-        );
         const mergedPullRequests: any = rawPullRequests.data.filter(
             (pullRequest: any) => pullRequest.merged_at
         );
