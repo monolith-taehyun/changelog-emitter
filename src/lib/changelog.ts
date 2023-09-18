@@ -290,7 +290,7 @@ export class Changelog {
                 console.error("File content not found in the response.");
             }
         } catch (error) {
-            console.error("Error:", error.message);
+            console.error("Error:", (error as { message: string }).message);
         }
     }
 }
