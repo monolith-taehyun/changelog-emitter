@@ -222,6 +222,8 @@ export class Changelog {
             indexOfPreviousTag = this.commits.indexOf(this.previousTagsCommit);
             if (indexOfPreviousTag === -1) {
                 await this.getCommits();
+            } else if (this.commits.length <= 0) {
+                break;
             } else {
                 break;
             }
@@ -243,8 +245,8 @@ export class Changelog {
 
             if (
                 indexOfPullRequest === -1 ||
-                indexOfPullRequest > indexOfLatestTag ||
-                indexOfPullRequest <= indexOfPreviousTag
+                indexOfPullRequest < indexOfLatestTag ||
+                indexOfPullRequest >= indexOfPreviousTag
             ) {
                 break;
             } else if (i === this.pullRequests.length - 1) {
