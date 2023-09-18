@@ -257,8 +257,38 @@ export class Changelog {
                 changelogBody += `${this.prefix} ${this.pullRequests[i].title}\n`;
             }
         }
+
+        // 기존 changelog 내용 조회
+        const existsChangelogBody = await this.getCommitFileContent();
+        changelogBody += existsChangelogBody;
+
         core.info("\nchangeLogBody=" + changelogBody);
         core.info("===============================");
         this.changelogBody = changelogBody;
+    }
+
+    private async getCommitFileContent() {
+        try {
+            const response = await this.octokit.repos.getContent({
+                owner: this.config.owner,
+                repo: this.config.repo,
+                path: "CHANGELOG.md",
+                ref: this.previousTagsCommit, // 커밋의 SHA
+            });
+
+            core.info("\nresponse=" + response);
+
+            if (Array.isArray(response.data)) {
+                console.error("The specified path is a directory.");
+            } else {
+                const content = Buffer.from(
+                    response.data["content"],
+                    "base64"
+                ).toString();
+                console.log("File Content:", content);
+            }
+        } catch (error) {
+            console.error("Error:", error.message);
+        }
     }
 }
