@@ -112,8 +112,8 @@ export class Changelog {
         core.info("releases: " + JSON.stringify(releases, null, 2));
 
         for (let i = 0; ; i++) {
-            const release = releases[i];
-            const tagName = release.data.tag_name;
+            const release = releases.data[i];
+            const tagName = release.tag_name;
             let releaseSha = "";
             for (let page = 0; ; page++) {
                 const releasesTag = (await this.getTags(page)).filter(
