@@ -249,8 +249,6 @@ export class Changelog {
                 indexOfPullRequest >= indexOfPreviousTag
             ) {
                 break;
-            } else if (i === this.pullRequests.length - 1) {
-                await this.getPullRequests();
             } else {
                 core.info("== ELSE ==");
                 changelogBody += `${this.prefix} ${this.pullRequests[i].title}\n`;
