@@ -238,6 +238,9 @@ export class Changelog {
                 "\nthis.pullRequests[i]: " +
                     JSON.stringify(this.pullRequests[i], null, 2)
             );
+            if (!this.pullRequests[i]) {
+                break;
+            }
             const indexOfPullRequest = this.commits.indexOf(
                 this.pullRequests[i].commitSha
             );
